@@ -33,7 +33,7 @@ populated_vars = ['Adolescent fertility rate (births per 1,000 women ages 15-19)
 'Birth rate, crude (per 1,000 people)', 
 'Death rate, crude (per 1,000 people)', 
 'Fertility rate, total (births per woman)',
-'Land area (sq. km)', 'Life expectancy at birth, female (years)',
+'Life expectancy at birth, female (years)',
 'Life expectancy at birth, male (years)', 
 'Mortality rate, adult, male (per 1,000 male adults)',
 'Population ages 0-14 (% of total population)', 
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     reign_df = pd.read_pickle('../data/year_agg.pkl')
     wdi_df = pd.read_pickle('../data/wdi_complete.pkl')
     joint_df = add_wd_rows(reign_df, wdi_df, variable_list)
-    joint_df.to_pickle('../data/joint_df.pkl')
+    joint_df.to_pickle('../data/pickles/joint_df.pkl')
 
 
 
