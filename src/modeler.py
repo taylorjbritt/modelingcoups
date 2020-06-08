@@ -114,7 +114,6 @@ def smoter(X_train, y_train, ratio = 1.0):
     return X_train_sm, y_train_sm
 
 
-
 def data_pipeline(df, target = 'pt_attempt', test_size = .25, random_state = 29, VIF_drop = False, scaled = False, minmax = False, resampler = None, sample_ratio = 1):
     '''
     Processes the onehot encoded dataframe to prepare it for modelling, with optional arguments 

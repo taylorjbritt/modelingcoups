@@ -3,15 +3,15 @@ import pandas as pd
 import numpy as np
 
 
-
 def get_cc(val):
     if val in wb_cow_dict:
         return wb_cow_dict[val]
     else:
         return 0
-    
+
 def get_year(val):
     return int(val)
+
 
 def add_wd_rows(reign_df, wdi_df, variable_list):
     joint_df = reign_df.copy()
@@ -27,7 +27,8 @@ def add_wd_rows(reign_df, wdi_df, variable_list):
         joint_df = joint_df.join(dfx_limited.set_index('yearcode'), on='yearcode', how = 'inner')
     return joint_df
       
-
+#these variables were selected by looking at the world bank data grouped by indicator 
+#and aggregated by count
 populated_vars = ['Adolescent fertility rate (births per 1,000 women ages 15-19)', 
 'Age dependency ratio (% of working-age population)', 
 'Birth rate, crude (per 1,000 people)', 
@@ -41,10 +42,12 @@ populated_vars = ['Adolescent fertility rate (births per 1,000 women ages 15-19)
 'Rural population (% of total population)', 
 'Urban population growth (annual %)']
 
+#these variables were were sparser than populated vars, but considered worthwhile to include
 hp_vars = ['GDP (constant 2010 US$)', 
 'Gross national expenditure (% of GDP)', 
 'GINI index (World Bank estimate)']
 
+#these variables were only populated in 5 year increments
 five_year_impute = ['International migrant stock, total', 
 'Mobile cellular subscriptions (per 100 people)']
 
