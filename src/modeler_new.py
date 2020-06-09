@@ -1,9 +1,6 @@
 import numpy as np
 import pandas as pd
 from inv_dict import wb_cow_dict
-
-import numpy as np
-import pandas as pd
 from sklearn import tree
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
@@ -47,6 +44,8 @@ def add_wd_rows(reign_df, wdi_df, variable_list):
         joint_df = joint_df.join(dfx_limited.set_index('yearcode'), on='yearcode', how = 'inner')
     return joint_df
 
+
+
 def upsampler(X_train, y_train, target = 'pt_attempt', ratio = 1.0):
     '''
     Args: X_train and y_train
@@ -67,6 +66,39 @@ def upsampler(X_train, y_train, target = 'pt_attempt', ratio = 1.0):
     y_up = upsampled[target]
     X_up = upsampled.drop(target, axis = 1)
     return X_up, y_up
+
+
+def downsampler(X_train, y_train, target = 'pt_attempt'):
+    '''
+    Args: X_train and y_train
+    Optional: what is the target
+    Returns: y_train, and X_train with the non-target rows sampled with replacement to equal 
+    the number of target rows (makes X_train much smaller)
+
+    '''
+    X = pd.concat([X_train, y_train], axis=1) 
+    no_coup = X[X[target]==0]
+    coup = X[X[target]==1]
+    coups_downsampled = resample(no_coup,
+                          replace=True, # sample with replacement
+                          n_samples=len(coup), # match number in majority class
+                          random_state=29)
+    downsampled = pd.concat([coup, coups_downsampled])
+    y_down = downsampled[target]
+    X_down = downsampled.drop(target, axis = 1)
+    return X_down, y_down
+
+def smoter(X_train, y_train, ratio = 1.0):
+    '''
+    Args: X_train and y_train
+    Optional: ratio
+    Returns: y_train, and X_train with new target rows synthetically added to equal 
+    the number of target rows (makes X_train much smaller) (or a different)
+    '''
+    sm = SMOTE(random_state=29, ratio=ratio)
+    X_train_sm, y_train_sm = sm.fit_sample(X_train, y_train)
+    return X_train_sm, y_train_sm
+
 
 def metric_test(model, X_test, y_test):
     '''
@@ -91,7 +123,38 @@ def get_feature_weights(model, feature_labels):
     s_log_vals = (pd.Series(d_log_vals)).sort_values()
     return s_log_vals
 
-
+def prepare_dataframe(reign_df, wdi_df, variable_list, drop_list):
+    '''
+    merges the prepared aggregated yearly reign data, and the selected columns from the 
+    world development indicator dataframe, drops the variable in the drop list
+    '''
+    dummies = pd.get_dummies(reign_df['government'])
+    df_dumb = reign_df.join(dummies)
+    df_dumb['pt_attempt'] = df_dumb['coupyear']
+    df_dumb['pt_suc'] = df_dumb['coupsuc']
+    df = df_dumb.drop(['ccode', 'country', 'leader', 'month', 'government', 'coupyear', 'coupsuc'], axis = 1)
+    joint_df = add_wd_rows(df, wdi_df, variable_list)
+    joint_df_drops = joint_df.drop(drop_list, axis = 1)
+    joint_df_x = joint_df_drops.dropna().copy()
+    joint_df_x['constant'] = 1
+    return joint_df_x       
+    
+def apply_model(df, model):
+    '''
+    applies the passed in model to the passed in dataframe,
+    currently designed to only predict on pt_attempt with upsampling
+    and standard scaling, given that this is what worked best.
+    '''
+    y = df['pt_attempt']
+    X = df.drop(['pt_attempt','pt_suc'], axis = 1)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size= .25, random_state= 40, stratify = y)
+    X_up, y_up = upsampler(X_train, y_train, ratio = 1)
+    pipe = Pipeline([('scaler', StandardScaler()),('model', model)])
+    pipe.fit(X_up, y_up)
+    weights = get_feature_weights(model, X.columns)
+    metric_test(pipe, X_test, y_test)
+    return model, weights
+        
 if __name__ == '__main__':
 
     variable_list = ['Life expectancy at birth, female (years)', 'GDP growth (annual %)', 'Mineral rents (% of GDP)', 'Oil rents (% of GDP)', 'Trade (% of GDP)', 'Foreign direct investment, net inflows (% of GDP)', 'Natural gas rents (% of GDP)', 'Population ages 0-14 (% of total population)', 'Rural population (% of total population)',  'Population growth (annual %)', 'Arable land (hectares per person)',
@@ -99,60 +162,42 @@ if __name__ == '__main__':
     'Merchandise imports (current US$)',
     'Primary education, duration (years)']
 
-    l1drops = ['direct_recent', 'Merchandise imports (current US$)', 'Foreign direct investment, net inflows (% of GDP)', 'elected', 'Presidential Democracy']
-
-
-    new_drops = ['ref_recent',
-    'ref_ant',
-    'Party-Military',
-    'Party-Personal-Military Hybrid',
-    'Personal Dictatorship',
-    'Provisional - Military',
-    'Warlordism',
-    'anticipation',
+    #these were calculated by iteratively using a LASSO regression and seeing what features were pulled to 0
+    revised_drops = ['age',
     'tenure_months',
-    'militarycareer',
-    'age',
-    'Natural gas rents (% of GDP)',
-    'Rural population (% of total population)',
-    'Arable land (hectares per person)',
-    'lead_recent',
-    'exec_ant',
-    'leg_ant',
+    'yearcode', 
+    'Personal Dictatorship', 
+    'exec_ant', 
     'leg_recent',
-    'indirect_recent',
-    'election_now',
-    'Merchandise exports (current US$)',
-    'precip',
-    'defeat_recent',
-    'prev_conflict',
-    'exec_recent',
-    'loss',
-    'delayed',
-    'change_recent']
+    'nochange_recent', 
+    'lastelection',
+    'lead_recent',
+    'victory_recent',
+    'ref_recent',
+    'irregular',
+    'Primary education, duration (years)',
+    'direct_recent',
+    'Merchandise imports (current US$)',
+    'Foreign direct investment, net inflows (% of GDP)', 
+    'elected', 
+    'Presidential Democracy']
 
     wdi_df = pd.read_pickle('../data/wdi_complete.pkl')
     reign_df = pd.read_pickle('../data/year_agg.pkl')
-    dummies = pd.get_dummies(reign_df['government'])
-    df_dumb = reign_df.join(dummies)
-    df_dumb['pt_attempt'] = df_dumb['coupyear']
-    df_dumb['pt_suc'] = df_dumb['coupsuc']
-    df = df_dumb.drop(['ccode', 'country', 'leader', 'month', 'government', 'coupyear', 'coupsuc'], axis = 1)
-    joint_df = add_wd_rows(df, wdi_df, variable_list)
-    joint_df_x = joint_df.dropna()
 
-    y = joint_df_x ['pt_attempt']
-    X = joint_df_x .drop(['pt_attempt','pt_suc'], axis = 1)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size= .25, random_state= 40, stratify = y)
-    ridge_scaled = LogisticRegressionCV(
+    df = prepare_dataframe(reign_df, wdi_df, variable_list, revised_drops)
+
+    elastic_scaled = LogisticRegressionCV(
             cv=5, dual=False,
-            penalty='l1', 
+            penalty='elasticnet', 
             scoring='recall',
             solver='saga', 
             n_jobs = 2,
-            tol=0.0001,
-            max_iter=100,)
-    X_up, y_up = upsampler(X_train, y_train, ratio = 1)
+            tol=0.001,
+            max_iter=200,
+            l1_ratios = [0, .3, .5, .7, 1])
 
-    logl1pipe = Pipeline([('scaler', StandardScaler()),('ridge_scaled', ridge_scaled)])
-    logl1pipe.fit(X_up, y_up)
+    model, weights = apply_model(df, elastic_scaled)
+
+        
+        
