@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
 import numpy as np
 
 def plot_corr(df,size=10):
@@ -9,6 +10,28 @@ def plot_corr(df,size=10):
     plt.xticks(range(len(corr.columns)), corr.columns, rotation = 'vertical');
     plt.yticks(range(len(corr.columns)), corr.columns)
     fig.savefig('../images/correlation_matrix')
+
+def make_scatter3d(x_var, y_var, z_var, df):
+    df_coup = df[df['pt_attempt'] == True]
+    df_no_coup = df[df['pt_attempt'] == False]
+    X1 = df_coup[x_var]
+    X2 = df_no_coup[x_var]
+    Y1 = df_coup[y_var]
+    Y2 = df_no_coup[y_var]
+    Z1 = df_coup[z_var]
+    Z2 = df_no_coup[z_var]
+    fig, ax = plt.subplots(figsize = (16, 16))
+    ax = plt.axes(projection='3d')
+    ax.scatter3D(X2,Y2,Z2, cmap='Greens', alpha = .2, label = 'No Coup')
+    ax.scatter3D(X1,Y1,Z1, color='red', marker = "^", label = 'Coup')
+    ax.set_ylabel(y_var, fontsize = 14)
+    ax.set_xlabel(x_var, fontsize = 14)
+    ax.set_zlabel(z_var, fontsize = 14)
+    ax.legend(loc = 'lower left', fontsize = 20)
+    title = x_var + ' vs. ' + y_var + ' vs ' + z_var
+    savename = '../images/' + x_var + '_' + y_var + '_' + z_var
+    ax.set_title(title, fontsize = 18)
+    fig.savefig(savename, dpi=400)
 
 if __name__ == '__main__':
 
@@ -89,8 +112,6 @@ if __name__ == '__main__':
     # ax.set_xticks(ticks = ticklocations -1)
     ax.set_title('Coups and Coup Attempts by Government Type (percent)', fontsize = 18)
     fig.savefig('../images/coupsbygovtpercent.png')
-
-
 
     # add a column for tenure in years instead of months, and then aggregate by tenure
     reign_df['tenure_years'] = reign_df['tenure_months']//12
@@ -262,6 +283,12 @@ if __name__ == '__main__':
     #ax.legend(loc = 'best')
     fig.savefig('../images/coupsattemptsonlyyearly.png')
 
+    ## Making 3D plots for ReadMe
 
+    df = pd.read_pickle('../data/pickles/model_ready_df.pkl')
+    make_scatter3d('Population ages 0-14 (% of total population)', 'Life expectancy at birth, female (years)', 'GDP growth (annual %)', df)
+    make_scatter3d('Population ages 0-14 (% of total population)', 'Life expectancy at birth, female (years)', 'Trade (% of GDP)', df)
+    make_scatter3d('Population ages 0-14 (% of total population)', 'Life expectancy at birth, female (years)', 'year', df)
+    make_scatter3d('Population ages 0-14 (% of total population)', 'Life expectancy at birth, female (years)', 'Mineral rents (% of GDP)', df)
 
 
