@@ -73,36 +73,6 @@ def upsampler(X_train, y_train, target = 'pt_attempt', ratio = 1.0):
     X_up = upsampled.drop(target, axis = 1)
     return X_up, y_up
 
-def downsampler(X_train, y_train, target = 'pt_attempt'):
-    '''
-    Args: X_train and y_train
-    Optional: what is the target
-    Returns: y_train, and X_train with the non-target rows sampled with replacement to equal 
-    the number of target rows (makes X_train much smaller)
-    '''
-    X = pd.concat([X_train, y_train], axis=1) 
-    no_coup = X[X[target]==0]
-    coup = X[X[target]==1]
-    coups_downsampled = resample(no_coup,
-                          replace=True, # sample with replacement
-                          n_samples=len(coup), # match number in majority class
-                          random_state=29)
-    downsampled = pd.concat([coup, coups_downsampled])
-    y_down = downsampled[target]
-    X_down = downsampled.drop(target, axis = 1)
-    return X_down, y_down
-
-def smoter(X_train, y_train, ratio = 1.0):
-    '''
-    Args: X_train and y_train
-    Optional: ratio
-    Returns: y_train, and X_train with new target rows synthetically added to equal 
-    the number of target rows (makes X_train much smaller) (or a different)
-    '''
-    sm = SMOTE(random_state=29, ratio=ratio)
-    X_train_sm, y_train_sm = sm.fit_sample(X_train, y_train)
-    return X_train_sm, y_train_sm
-
 def metric_test(model, X_test, y_test):
     '''
     Prints out the accuracy, recall, precision, and f1 score for the 
@@ -125,7 +95,7 @@ def get_feature_weights(model, feature_labels):
         d_log_vals[feature_labels[idx]] = feat  
     s_log_vals = (pd.Series(d_log_vals)).sort_values()
     return s_log_vals
-    
+
 def prepare_dataframe(reign_df, wdi_df, variable_list, drop_list):
     '''
     merges the prepared aggregated yearly reign data, and the selected columns from the 
