@@ -33,8 +33,11 @@ def get_year(val):
 
 def add_wd_rows(reign_df, wdi_df, variable_list):
     '''
+    parameters: reign df, wdi_df, indicators in variable list from the wdi_df,
     pulls the indicators in variable list from the wdi_df, assigns them the country
-    code from REIGN, generates a year-code based on the combination of the year 
+    code from REIGN, generates a year-code based on the combination of the year, 
+    performs an inner joins reign df
+    returns: joined dataframe
     '''
     joint_df = reign_df.copy()
     yearlist = [str(i) for i in np.arange(1960, 2020)]
@@ -48,8 +51,6 @@ def add_wd_rows(reign_df, wdi_df, variable_list):
         dfx_limited = dfx[[i, 'yearcode']]
         joint_df = joint_df.join(dfx_limited.set_index('yearcode'), on='yearcode', how = 'inner')
     return joint_df
-
-
 
 def upsampler(X_train, y_train, target = 'pt_attempt', ratio = 1.0):
     '''
@@ -72,14 +73,12 @@ def upsampler(X_train, y_train, target = 'pt_attempt', ratio = 1.0):
     X_up = upsampled.drop(target, axis = 1)
     return X_up, y_up
 
-
 def downsampler(X_train, y_train, target = 'pt_attempt'):
     '''
     Args: X_train and y_train
     Optional: what is the target
     Returns: y_train, and X_train with the non-target rows sampled with replacement to equal 
     the number of target rows (makes X_train much smaller)
-
     '''
     X = pd.concat([X_train, y_train], axis=1) 
     no_coup = X[X[target]==0]
@@ -104,7 +103,6 @@ def smoter(X_train, y_train, ratio = 1.0):
     X_train_sm, y_train_sm = sm.fit_sample(X_train, y_train)
     return X_train_sm, y_train_sm
 
-
 def metric_test(model, X_test, y_test):
     '''
     Prints out the accuracy, recall, precision, and f1 score for the 
@@ -127,7 +125,7 @@ def get_feature_weights(model, feature_labels):
         d_log_vals[feature_labels[idx]] = feat  
     s_log_vals = (pd.Series(d_log_vals)).sort_values()
     return s_log_vals
-
+    
 def prepare_dataframe(reign_df, wdi_df, variable_list, drop_list):
     '''
     merges the prepared aggregated yearly reign data, and the selected columns from the 
@@ -145,7 +143,6 @@ def prepare_dataframe(reign_df, wdi_df, variable_list, drop_list):
     joint_df_x = joint_df_x.drop('country', axis =1)
     joint_df_x['constant'] = 1
     return joint_df_x, country_year_idx  
-     
     
 def apply_model(df, model):
     '''
