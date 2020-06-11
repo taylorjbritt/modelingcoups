@@ -226,10 +226,9 @@ if __name__ == '__main__':
     # ax.set_xticks(ticks = ticklocations -1)
     ax.set_title("Attempted Coups – Top 15 Countries", fontsize = 24)
     #ax.legend(loc = 'best', fontsize = 14)
-    ax.set_ylabel('Coups', fontsize = 20)
+    ax.set_ylabel('Number of Coups', fontsize = 20)
     ax.set_xlabel("Country", fontsize = 20)
     plt.tight_layout(pad=3, h_pad=None, w_pad=None, rect=None)
-
     fig.savefig('../images/coupattempsonlybycountry.png')
 
 
@@ -276,12 +275,12 @@ if __name__ == '__main__':
     #ax.bar(yearly_df.index.values, yearly_df['pt_suc'], color = 'red', width = .3, label = 'Successful Coups')
     plt.xticks(rotation=45, fontsize = 20)
     plt.yticks(rotation=0, fontsize = 20)
-    ax.set_ylabel('Coups', fontsize = 20)
+    ax.set_ylabel('Number of Coups', fontsize = 20)
     ax.set_xlabel("Year", fontsize = 20)
     ax.set_title('Coup Attempts by Year', fontsize = 24)
     plt.tight_layout(pad=3, h_pad=None, w_pad=None, rect=None)
     #ax.legend(loc = 'best')
-    fig.savefig('../images/coupsattemptsonlyyearly.png')
+    fig.savefig('../images/1coupsattemptsonlyyearly.png')
 
     ## Making 3D plots for ReadMe
 

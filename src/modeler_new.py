@@ -131,7 +131,6 @@ def apply_model(df, model):
     return model, weights
 
 def get_prediction(df, idx, country, year, model, scaler):
-    
     index = idx[(idx['country'] == country) & (idx['year'] == year)].index[0]
     row = df[df.index == index].drop(['pt_attempt', 'pt_suc'], axis = 1)
     row_scaled = scaler.transform(row)
@@ -140,7 +139,14 @@ def get_prediction(df, idx, country, year, model, scaler):
 
 if __name__ == '__main__':
 
-    variable_list = ['Life expectancy at birth, female (years)', 'GDP growth (annual %)', 'Mineral rents (% of GDP)', 'Oil rents (% of GDP)', 'Trade (% of GDP)', 'Foreign direct investment, net inflows (% of GDP)', 'Natural gas rents (% of GDP)', 'Population ages 0-14 (% of total population)', 'Rural population (% of total population)',  'Population growth (annual %)', 'Arable land (hectares per person)',
+    variable_list = ['Life expectancy at birth, female (years)', 
+    'GDP growth (annual %)',
+     'Mineral rents (% of GDP)',
+      'Oil rents (% of GDP)', 
+      'Trade (% of GDP)', 
+      'Foreign direct investment, net inflows (% of GDP)',
+       'Natural gas rents (% of GDP)',
+        'Population ages 0-14 (% of total population)', 'Rural population (% of total population)',  'Population growth (annual %)', 'Arable land (hectares per person)',
     'Merchandise exports (current US$)',
     'Merchandise imports (current US$)',
     'Primary education, duration (years)']

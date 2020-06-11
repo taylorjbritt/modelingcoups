@@ -5,17 +5,15 @@ A protestor with a flag representing the indigenous communities of the Andes mak
 
 ## Introduction
 
-I spent a few years living in Argentina and travelled around a few other countries in South America, and I was always struck by how much of their 20th century history was defined by military coups, which often led to periods of chaos, repression, and terrible atrocities. The removal of Evo Morales in Bolivia last year and the somewhat farcical attempted overthrow of the government in Venezuela this month showed that these events are ongoing. 
+I spent a few years living in Argentina and travelled around South America, and I was always struck by how much of their 20th century history was defined by military coups, which often led to periods of chaos, repression, and terrible atrocities. Just in the last year, Evo Morales was driven from power in Bolivia and mercenaries attempted to overthrow Nicolas Maduro in Venezuela, and amid the chaos of the coronavirus outbreaks, there are rumblings of a military takeover in Brazil to shore-up Jair Bolsonaro's government. This shows that while the geopolitical context has somewhat changed from the Cold War era, the threat of military coups is ongoing.  
 
-I recently read a Soviet science fiction novel in which scientists from Earth travel to another planet that is also populated by humans, but mired in a dark ages level of technology and social organization. When one of the scientists (posing as a local semi-divine lord) notices an emerging fascist movement in the city he lives in, the other scientists ignore his pleas for help, as this political development contradicts their models of how human civilization develops. 
-
-These two topics provoked me to wonder if I could apply machine learning techniques to predict when coups happen in different countries based on economic and political statistics. Fortunately, I discovered that political scientists were also interested in this question, and had created a dataset that tracked military coups called REIGN. I decided to try to create my own model using REIGN and supplementary data to see I could model coups fairly accurately and see what features influenced the occurence of coups. 
+As I began working on data science, I began to wonder if I could apply machine learning techniques to predict when coups happen in different countries based on economic and political statistics. Fortunately, I discovered that political scientists were also interested in this question, and had created a dataset that tracked military coups called REIGN. I decided to try to create my own model using REIGN and supplementary data from the World Bank to see I could model coups fairly accurately and see what features influenced the occurence of coups. 
 
 ## The Data
 
-I used the REIGN dataset (see citation below) from One Earth Future for details on country leaders, government types, and when successful and attempted coups occured. I supplemented this with indicators from the Correlates of War project, which had information on population, trade, and militarization. 
+I used the REIGN dataset (see citation below) from One Earth Future for details on country leaders, government types, and when successful and attempted coups occured. I supplemented this with indicators from the World Bank's World Development Indicators, which had information on population, trade, and militarization. 
 
-The Reign dataset contained 135,637 rows covering January 1950 unitl March 2020, with 200 countries, 466 attempted coups (successful or unsuccessful) and 233 successful ones. 
+The Reign dataset contained 135,637 rows covering January 1950 unitl March 2020, with 200 countries, 466 attempted coups (successful or unsuccessful) and 233 successful ones.
 
 By filtering the dataframe for months in which attempted coups took place and a certain country, it was sometimes possible to trace their tumultuous journey through the latter half of the 20th century. For instance, looking at Argentina below, you can see the overthrow of Juan Perón in 1955, followed by a decade and a half of successive coups. Perón returned to Argentina in 1973 but died the following year – his Vice President and wife, Isabel, took power, but was overthrown in 1976 and replaced by a junta  
 
@@ -64,9 +62,7 @@ Likewise, when looking at leader tenures, the largest number of coups happen wit
 
 A major challenge in modeling was the extreme imbalance of the classes: out of 135,637 thousands rows in the REIGN data, only 466 had an attempted coup. A model that always predicted a coup wouldn't happen would automatically feature an accuracy upwards of 99.5%, but would completely miss the point of the investigation. Instead of focusing on accuracy, I was really curious about training a model with strong recall. However, the thing I really cared about was interpretability of the model, so I decided to first focus on a creating an inferential model using a logistic regression. 
 
-
-
-In order to deal with the problem of imbalanced classes, I experimented with several techniques while evaluating the performance of a simple logistic regression. I found that oversampling and SMOTE tended to perform fairly well, but oversampling offered slightly better recall, so I used it as my resampling method (however, in my pipeline I did build in the option to try downsampling and SMOTE instead.) I also made sure to stratify my target column when using a test train split to ensure that the model would have a reasonable number of targets to predict on when I tested it. 
+In order to deal with the problem of imbalanced classes, I experimented with several techniques while evaluating the performance of a simple logistic regression. I found that oversampling and SMOTE tended to perform fairly well, but oversampling offered slightly better performance, so I used it as my resampling method (however, in my pipeline I did build in the option to try downsampling and SMOTE instead.) I also made sure to stratify my target column when using a test train split to ensure that the model would have a reasonable number of targets to predict on when I tested it. 
 
 I experimented with using Variance Inflation Factors to identify collinear features, but instead decided to use a logistic regression with L1 regularization to pull features to 0. After dropping those features, I used a logistic regression with 5-fold cross validation and an elastic net regularizer to derive a list of relative feature importances and their direction:
 
@@ -74,44 +70,25 @@ I experimented with using Variance Inflation Factors to identify collinear featu
 
 | Metric | Value |
 |--------|-------|
-| Accuracy| 79% |
-| Recall|  82% |
+| Accuracy| 75% |
+| Recall|  91% |
 
+## Coefficients
 
-## Strongest Positive Indicators
+Below are the largest positive and negative beta coefficients for the model trained on scaled data:
 
-| Feature                | Coefficient | Description |
-|------------------------|-------------|-------------|
-| milex                  |14.0   | Military expenditures |
-| trade balance          | 5.1   | Trade balance (exports - imports) |
-| lastelection           | 4.67    | Months since the last election|
-| prev_conflict          | 2.4    | Dummy variable for a violent civil conflict in the past 6 months
-| Provisional - Civilian | 1.9    | Dummy variable for an interim civilian coverment |
-| milper                 | 1.6   | Total Military Personnel |
-| Warlordism             | 1.5    | Dummy variable for rule by warlords (currently applies to Yemen and Libya) |
-| Military               |  1.4    | Rule by a military junta |
-| Indirect Military      | 1.4    | Rule by a military junta with a civilian puppet |
-| Military-Personal      |  1.3    | Rule by a military junta consolidated around a single figure (ex. Pinochet in Chile) |
+![coups by governments %](images/increased_coup_coef.png)
 
 ## Strongest Negative Indicators
 
-| Feature             | Coefficient |  Description |
-|------------------|------------|---|
-| irst             | -56.0 | Iron and steel production |
-| indirect_recent  | -9.4  | Dummy variable for the 6 months following an indirect election (controlled by elites rather than popular vote)  For example, Xi Jinping's elevation by party elites in China|
-| population       | -7.6  | Total population  |
-| irregular        | -4.9  | Dummy variable for an an anticipated irregular election  |
-| mil_percent      | -4.5  | Military Personnel as a percentage of the total popuation  |
-| ref_ant          | -2.2  | A referendum is expected in the next 6 months  | 
-| year             | -2.0  | Year  |
-| precip           | -0.8  | Precipition relative to histoical average  |
-| loss             | -0.7  | Number of months since the incumbent or political party has lost an election (or changed, in the absence of elections) |
-| leg_ant          | -0.7  | Dummy variable for a legislative election expected in the next 6 months  |
+![coups by governments %](images/decreased_coup_coef.png)
 
 
+# Is the U.S. about to experience a military coup?
 
+As I was working on this project, protests in response to the murder of George Floyd enveloped the United States, and there began to rumblings of American troops deployedd within the United States to quell the unrest. While my data didn't extend to 2020, I decided to create a hypothetical row of data for the U.S. in June 2020 to see what the model would predict. 
 
-
+It suggested a 26% probability for U.S. June 2020 (for 2016 it was 22%) – and given that the model tended to offer a precision of around 1 in 10, at least according the model, a coup is very unlikely. 
 ## Citations
 
 ### REIGN Dataset
